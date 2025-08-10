@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天氣預報</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            display: flex;
+            height: 100vh;
+        }
+        .container {
+            display: flex;
+            width: 100%;
+        }
+        .desktop {
+            width: 50%;
+            background: #87CEEB;
+            padding: 20px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .mobile {
+            width: 50%;
+            background: #87CEEB;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .weather-box {
+            text-align: center;
+            color: black;
+        }
+        .weather-box h1 {
+            font-size: 2.5em;
+            margin: 0;
+        }
+        .weather-box p {
+            margin: 5px 0;
+        }
+        .search-box {
+            margin: 10px 0;
+        }
+        .search-box input {
+            padding: 5px;
+            font-size: 1em;
+            border: none;
+            border-radius: 5px;
+        }
+        .details {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+        .details div {
+            text-align: center;
+        }
+        .emoji {
+            font-size: 1.5em;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            .desktop, .mobile {
+                width: 100%;
+            }
+            .desktop {
+                overflow: hidden;
+            }
+            .mobile {
+                overflow-y: auto;
+            }
+        }
+        #history {
+            margin-top: 20px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="desktop">
+            <div class="weather-box">
+                <p>p.m 3:24</p>
+                <h1>晴 30.3°C</h1>
+                <div class="search-box">
+                    <input type="text" id="cityInputDesktop" placeholder="搜尋: 台北">
+                    <button onclick="fetchWeather('desktop')">搜尋</button>
+                </div>
+                <div class="details">
+                    <div>
+                        <p class="emoji">💧</p>
+                        <p>相對濕度: 81%</p>
+                    </div>
+                    <div>
+                        <p class="emoji">🌬️</p>
+                        <p>風速: 3級 5 m/s</p>
+                    </div>
+                    <div>
+                        <p class="emoji">🌬️</p>
+                        <p>風向: 偏南風</p>
+                    </div>
+                    <div>
+                        <p class="emoji">☁️</p>
+                        <p>降雨機率: 10%</p>
+                    </div>
+                    <div>
+                        <p class="emoji">😓</p>
+                        <p>舒適度: 悶熱30</p>
+                    </div>
+                    <div>
+                        <p class="emoji">☀️</p>
+                        <p>最大紫外線: II</p>
+                    </div>
+                </div>
+            </div>
+            <div id="historyDesktop"></div>
+        </div>
+        <div class="mobile">
+            <div class="weather-box">
+                <p>晴 30.3°C</p>
+                <div class="search-box">
+                    <input type="text" id="cityInputMobile" placeholder="搜尋: 台北">
+                    <button onclick="fetchWeather('mobile')">搜尋</button>
+                </div>
+                <div class="details">
+                    <div>
+                        <p class="emoji">💧</p>
+                        <p>相對濕度: 81%</p>
+                    </div>
+                    <div>
+                        <p class="emoji">🌬️</p>
+                        <p>風速: 3級 5 m/s</p>
+                    </div>
+                    <div>
+                        <p class="emoji">🌬️</p>
+                        <p>風向: 偏南風</p>
+                    </div>
+                    <div>
+                        <p class="emoji">☁️</p>
+                        <p>降雨機率: 10%</p>
+                    </div>
+                    <div>
+                        <p class="emoji">😓</p>
+                        <p>舒適度: 悶熱30</p>
+                    </div>
+                    <div>
+                        <p class="emoji">☀️</p>
+                        <p>最大紫外線: II</p>
+                    </div>
+                </div>
+            </div>
+            <div id="historyMobile"></div>
+        </div>
+    </div>
+
+    <script>
+        // 假設的中央氣象局 API (需替換為真實 API)
+        const API_KEY = "CWA-3D40075B-EA31-4D6B-8818-3EE7830B4B8D"; // 請填入真實 API 金鑰
+        const API_URL = "https://api.cwb.gov.tw/v1/rest/datastore/O-A0003-001"; // 假設的 API 端點
+
+        let history = JSON.parse(localStorage.getItem('weatherHistory')) || [];
+
+        function fetchWeather(device) {
+            const cityInput = document.getElementById(`cityInput${device.charAt(0).toUpperCase() + device.slice(1)}`).value;
+            if (!cityInput) return;
+
+            // 模擬 API 呼叫 (實際需根據 CWB API 格式調整)
+            const url = `${API_URL}?locationName=${cityInput}&Authorization=${API_KEY}`;
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // 假設數據結構，根據實際 API 調整
+                    const weather = data.records.location[0].weatherElement[0];
+                    updateWeather(device, {
+                        temperature: "30.3",
+                        humidity: "81%",
+                        windSpeed: "3級 5 m/s",
+                        windDirection: "偏南風",
+                        rainChance: "10%",
+                        comfort: "悶熱30",
+                        uv: "II"
+                    });
+                    updateHistory(cityInput);
+                })
+                .catch(error => console.error('Error fetching weather:', error));
+        }
+
+        function updateWeather(device, data) {
+            const weatherBox = document.querySelector(`.${device} .weather-box`);
+            weatherBox.querySelector('h1').textContent = `晴 ${data.temperature}°C`;
+            const details = weatherBox.querySelector('.details');
+            details.children[0].querySelector('p:last-child').textContent = `相對濕度: ${data.humidity}`;
+            details.children[1].querySelector('p:last-child').textContent = `風速: ${data.windSpeed}`;
+            details.children[2].querySelector('p:last-child').textContent = `風向: ${data.windDirection}`;
+            details.children[3].querySelector('p:last-child').textContent = `降雨機率: ${data.rainChance}`;
+            details.children[4].querySelector('p:last-child').textContent = `舒適度: ${data.comfort}`;
+            details.children[5].querySelector('p:last-child').textContent = `最大紫外線: ${data.uv}`;
+        }
+
+        function updateHistory(city) {
+            if (!history.includes(city)) {
+                history.push(city);
+                localStorage.setItem('weatherHistory', JSON.stringify(history));
+                updateHistoryDisplay();
+            }
+        }
+
+        function updateHistoryDisplay() {
+            const historyDesktop = document.getElementById('historyDesktop');
+            const historyMobile = document.getElementById('historyMobile');
+            historyDesktop.innerHTML = historyMobile.innerHTML = '<h3>歷史紀錄:</h3>' + history.map(city => `<p>${city}</p>`).join('');
+        }
+
+        // 初始載入歷史紀錄
+        updateHistoryDisplay();
+    </script>
+</body>
+</html>
