@@ -42,8 +42,9 @@
       top: 120px;
       width:100%;
       text-align:center;
-      /* 字陰影移除 */
       transition: color 0.5s ease;
+      /* 去除字陰影 */
+      text-shadow: none;
     }
     .main .big-temp { font-size:96px; font-weight:800; line-height:0.9; }
     .main .small { font-size:24px; margin-top:8px; opacity:0.95; }
@@ -54,8 +55,30 @@
       width:100%;
       text-align:center;
       z-index:9;
-      /* 字陰影移除 */
       transition: color 0.5s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      color: #000000;  /* 文字黑 */
+      /* 去除字陰影 */
+      text-shadow: none;
+    }
+
+    /* 參考ruixuegui按鈕風格，顏色改成跟橫幅同色，去掉光暈 */
+    .btn-detail {
+      padding: 6px 18px;
+      font-size: 16px;
+      background-color: #A3BFD9;  /* 跟橫幅同色 */
+      border: none;
+      border-radius: 24px;
+      color: #000000;  /* 黑字更顯眼 */
+      cursor: pointer;
+      box-shadow: none;  /* 去掉光暈 */
+      transition: background-color 0.3s ease;
+    }
+    .btn-detail:hover {
+      background-color: #89aadb; /* 稍微亮一點 */
     }
 
     * { box-sizing: border-box; }
@@ -81,14 +104,16 @@
     <div class="small" id="location">Loading...</div>
   </main>
 
-  <div class="footer" id="footer">資料來源：weatherapi.com</div>
+  <div class="footer" id="footer">
+    <button class="btn-detail" onclick="window.open('https://www.msn.com/zh-tw/weather/forecast/in-%E5%8D%97%E5%8D%80,%E8%87%BA%E4%B8%AD%E5%B8%82?loc=eyJsIjoi5Y2X5Y2AIiwiciI6IuiHuuS4reW4giIsInIyIjoi6Ie65Lit5biCIiwiYyI6IuWPsOeBoyIsImkiOiJUVyIsInQiOjEwMiwiZyI6InpoLXR3IiwieCI6IjEyMC42NjQiLCJ5IjoiMjQuMTE3MSJ9&weadegreetype=C&cvid=ee279de14a52445cdaedb12e4e9d9035&ei=9', '_blank')">查看詳細天氣</button>
+    <div>資料來源：weatherapi.com</div>
+  </div>
 
   <script>
     const API_KEY = '177eb0e0b74c4d6387812011250908';
     const CITY = 'Taichung';
     const WEATHER_REFRESH_MS = 5 * 60 * 1000;
 
-    // 英文天氣到中文天氣映射
     const condMap = {
       'Sunny': '晴天',
       'Clear': '晴朗',
