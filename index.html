@@ -13,7 +13,7 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
-    body { overflow:hidden; background-size:cover; background-position:center; }
+    body { overflow-y:auto; background-size:cover; background-position:center; padding-bottom:100px; }
 
     .overlay { position:fixed; inset:0; backdrop-filter: blur(2px); pointer-events:none; }
 
@@ -38,9 +38,8 @@
     .right .cond { font-size:16px; display:flex; align-items:center; gap:8px; }
 
     .main {
-      position: absolute;
-      top: 120px;
-      width:100%;
+      margin-top: 120px;
+      padding: 0 20px;
       text-align:center;
       transition: color 0.5s ease;
       /* 去除字陰影 */
@@ -48,6 +47,31 @@
     }
     .main .big-temp { font-size:96px; font-weight:800; line-height:0.9; }
     .main .small { font-size:24px; margin-top:8px; opacity:0.95; }
+
+    table.hourly-forecast {
+      margin: 20px auto;
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 600px;
+      font-size: 16px;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      color: #000;
+    }
+    table.hourly-forecast th, table.hourly-forecast td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #ddd;
+      text-align: center;
+    }
+    table.hourly-forecast th {
+      background-color: #A3BFD9;
+      font-weight: 700;
+    }
+    table.hourly-forecast tr:last-child td {
+      border-bottom: none;
+    }
 
     .footer {
       position:fixed;
@@ -102,6 +126,20 @@
   <main class="main">
     <div class="big-temp" id="bigTemp">-- ℃</div>
     <div class="small" id="location">Loading...</div>
+
+    <!-- 24小時天氣表格 -->
+    <table class="hourly-forecast" aria-label="未來24小時天氣預報" id="hourlyTable">
+      <thead>
+        <tr>
+          <th>時間</th>
+          <th>天氣</th>
+          <th>溫度</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td colspan="3">載入中...</td></tr>
+      </tbody>
+    </table>
   </main>
 
   <div class="footer" id="footer">
@@ -177,12 +215,31 @@
       document.getElementById('time').textContent = `${h}:${mm} ${ampm}`;
     }
 
+    function formatHourlyRow(hourData) {
+      // 時間轉格式：6/4 23:15
+      const dt = new Date(hourData.time);
+      const month = dt.getMonth() + 1;
+      const date = dt.getDate();
+      const hh = dt.getHours().toString().padStart(2, '0');
+      const mm = dt.getMinutes().toString().padStart(2, '0');
+      const timeStr = `${month}/${date} ${hh}:${mm}`;
+
+      const condEng = hourData.condition.text;
+      const condZh = condMap[condEng] || condEng;
+      const temp = Math.round(hourData.temp_c);
+
+      return `<tr><td>${timeStr}</td><td>${condZh}</td><td>${temp}°C</td></tr>`;
+    }
+
     async function fetchWeather() {
       try {
-        const url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${encodeURIComponent(CITY)}&aqi=no`;
+        // 取今天預報包含未來24小時
+        const url = `https://api.weatherapi.com/v1/forecast.json?key=${API_KEY}&q=${encodeURIComponent(CITY)}&days=2&aqi=no&alerts=no`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('取得天氣失敗');
         const data = await res.json();
+
+        // 當前天氣更新
         const temp = Math.round(data.current.temp_c);
         const condEng = data.current.condition.text;
         const condZh = condMap[condEng] || condEng;
@@ -198,11 +255,32 @@
         } else {
           updateTime();
         }
+
+        // 未來24小時資料
+        let hourlyData = [];
+        if (data.forecast && data.forecast.forecastday && data.forecast.forecastday.length > 0) {
+          // 把今天跟明天的時刻合併
+          const todayHours = data.forecast.forecastday[0].hour;
+          const tomorrowHours = data.forecast.forecastday[1]?.hour || [];
+          hourlyData = todayHours.concat(tomorrowHours);
+        }
+
+        // 取未來24小時從現在起（不包含過去時間）
+        const nowTime = new Date(data.location.localtime.replace(' ', 'T')).getTime();
+        const next24Hours = hourlyData.filter(h => new Date(h.time).getTime() >= nowTime).slice(0,24);
+
+        // 產生表格內容
+        if (next24Hours.length === 0) {
+          document.querySelector('#hourlyTable tbody').innerHTML = `<tr><td colspan="3">無未來24小時資料</td></tr>`;
+        } else {
+          document.querySelector('#hourlyTable tbody').innerHTML = next24Hours.map(formatHourlyRow).join('');
+        }
       } catch (err) {
         console.error(err);
         document.getElementById('cond').textContent = '-- ℃ · 無資料';
         document.getElementById('bigTemp').textContent = '-- ℃';
         document.getElementById('location').textContent = '無法取得資料';
+        document.querySelector('#hourlyTable tbody').innerHTML = `<tr><td colspan="3">無法取得未來資料</td></tr>`;
       }
     }
 
