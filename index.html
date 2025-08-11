@@ -15,9 +15,6 @@
     }
     body { overflow-y:auto; background-size:cover; background-position:center; padding-bottom:100px; }
 
-    /* overlay 改成不顯示，去除模糊 */
-    /* .overlay { position:fixed; inset:0; backdrop-filter: blur(2px); pointer-events:none; } */
-
     .banner {
       position:fixed;
       top:0; left:0; right:0;
@@ -42,8 +39,6 @@
       margin-top: 120px;
       padding: 0 20px;
       text-align:center;
-      transition: color 0.5s ease;
-      /* 去除字陰影 */
       text-shadow: none;
     }
     .main .big-temp { font-size:96px; font-weight:800; line-height:0.9; }
@@ -80,37 +75,33 @@
       width:100%;
       text-align:center;
       z-index:9;
-      transition: color 0.5s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 8px;
-      color: #000000;  /* 文字黑 */
-      /* 去除字陰影 */
+      color: #000000;
       text-shadow: none;
     }
 
     .btn-detail {
       padding: 6px 18px;
       font-size: 16px;
-      background-color: #A3BFD9;  /* 跟橫幅同色 */
+      background-color: #A3BFD9;
       border: none;
       border-radius: 24px;
-      color: #000000;  /* 黑字更顯眼 */
+      color: #000000;
       cursor: pointer;
-      box-shadow: none;  /* 去掉光暈 */
+      box-shadow: none;
       transition: background-color 0.3s ease;
     }
     .btn-detail:hover {
-      background-color: #89aadb; /* 稍微亮一點 */
+      background-color: #89aadb;
     }
 
     * { box-sizing: border-box; }
   </style>
 </head>
 <body>
-  <!-- overlay 已移除，不會有模糊 -->
-
   <div class="banner" role="banner">
     <div class="left">
       <div class="brand">Weather.ru</div>
@@ -151,57 +142,98 @@
     const CITY = 'Taichung';
     const WEATHER_REFRESH_MS = 5 * 60 * 1000;
 
+    // 中文天氣狀態字典(補全+保底翻譯)
     const condMap = {
-      'Sunny': '晴天',
-      'Clear': '晴朗',
-      'Partly cloudy': '多雲',
-      'Cloudy': '多雲',
-      'Overcast': '多雲',
-      'Mist': '霧',
-      'Patchy rain possible': '有雨',
-      'Patchy snow possible': '有雪',
-      'Patchy sleet possible': '凍雨',
-      'Patchy freezing drizzle possible': '凍毛毛雨',
-      'Thundery outbreaks possible': '雷陣雨',
-      'Blowing snow': '吹雪',
-      'Blizzard': '暴風雪',
-      'Fog': '霧',
-      'Freezing fog': '凍霧',
-      'Patchy light drizzle': '小毛毛雨',
-      'Light drizzle': '小毛毛雨',
-      'Freezing drizzle': '凍毛毛雨',
-      'Heavy freezing drizzle': '大量凍毛毛雨',
-      'Patchy light rain': '小雨',
-      'Light rain': '小雨',
-      'Moderate rain at times': '間歇中雨',
-      'Moderate rain': '中雨',
-      'Heavy rain at times': '間歇大雨',
-      'Heavy rain': '大雨',
-      'Light freezing rain': '輕微凍雨',
-      'Moderate or heavy freezing rain': '中大凍雨',
-      'Light sleet': '輕微凍雪',
-      'Moderate or heavy sleet': '中大凍雪',
-      'Patchy light snow': '局部小雪',
-      'Light snow': '小雪',
-      'Patchy moderate snow': '局部中雪',
-      'Moderate snow': '中雪',
-      'Patchy heavy snow': '局部大雪',
-      'Heavy snow': '大雪',
-      'Ice pellets': '冰粒',
-      'Light rain shower': '小陣雨',
-      'Moderate or heavy rain shower': '中大陣雨',
-      'Torrential rain shower': '暴雨',
-      'Light sleet showers': '輕微凍雪陣雨',
-      'Moderate or heavy sleet showers': '中大凍雪陣雨',
-      'Light snow showers': '輕微雪陣雨',
-      'Moderate or heavy snow showers': '中大雪陣雨',
-      'Light showers of ice pellets': '輕微冰粒陣雨',
-      'Moderate or heavy showers of ice pellets': '中大冰粒陣雨',
-      'Patchy light rain with thunder': '局部小雷雨',
-      'Moderate or heavy rain with thunder': '中大雷雨',
-      'Patchy light snow with thunder': '局部小雷雪',
-      'Moderate or heavy snow with thunder': '中大雷雪'
+      "Sunny": "晴天",
+      "Clear": "晴朗",
+      "Partly cloudy": "多雲",
+      "Cloudy": "多雲",
+      "Overcast": "陰天",
+      "Mist": "薄霧",
+      "Patchy rain possible": "可能小雨",
+      "Patchy snow possible": "可能小雪",
+      "Patchy sleet possible": "可能凍雨",
+      "Patchy freezing drizzle possible": "可能凍毛毛雨",
+      "Thundery outbreaks possible": "可能雷陣雨",
+      "Blowing snow": "飄雪",
+      "Blizzard": "暴風雪",
+      "Fog": "濃霧",
+      "Freezing fog": "凍霧",
+      "Patchy light drizzle": "局部小毛毛雨",
+      "Light drizzle": "小毛毛雨",
+      "Freezing drizzle": "凍毛毛雨",
+      "Heavy freezing drizzle": "大量凍毛毛雨",
+      "Patchy light rain": "局部小雨",
+      "Light rain": "小雨",
+      "Moderate rain at times": "間歇中雨",
+      "Moderate rain": "中雨",
+      "Heavy rain at times": "間歇大雨",
+      "Heavy rain": "大雨",
+      "Light freezing rain": "輕微凍雨",
+      "Moderate or heavy freezing rain": "中大凍雨",
+      "Light sleet": "輕微凍雪",
+      "Moderate or heavy sleet": "中大凍雪",
+      "Patchy light snow": "局部小雪",
+      "Light snow": "小雪",
+      "Patchy moderate snow": "局部中雪",
+      "Moderate snow": "中雪",
+      "Patchy heavy snow": "局部大雪",
+      "Heavy snow": "大雪",
+      "Ice pellets": "冰粒",
+      "Light rain shower": "小陣雨",
+      "Moderate or heavy rain shower": "中大陣雨",
+      "Torrential rain shower": "暴雨",
+      "Light sleet showers": "輕微凍雪陣雨",
+      "Moderate or heavy sleet showers": "中大凍雪陣雨",
+      "Light snow showers": "輕微雪陣雨",
+      "Moderate or heavy snow showers": "中大雪陣雨",
+      "Light showers of ice pellets": "輕微冰粒陣雨",
+      "Moderate or heavy showers of ice pellets": "中大冰粒陣雨",
+      "Patchy light rain with thunder": "局部小雷雨",
+      "Moderate or heavy rain with thunder": "中大雷雨",
+      "Patchy light snow with thunder": "局部小雷雪",
+      "Moderate or heavy snow with thunder": "中大雷雪"
     };
+
+    // 保底中文翻譯函數：把英文拆詞翻成中文字串（簡單處理）
+    function fallbackTranslate(eng) {
+      // 例如 "Light rain" => "輕微雨"
+      // 簡單字典拆解
+      const wordsMap = {
+        "light": "輕微",
+        "patchy": "局部",
+        "moderate": "中度",
+        "heavy": "大量",
+        "showers": "陣雨",
+        "rain": "雨",
+        "snow": "雪",
+        "sleet": "凍雨",
+        "freezing": "凍",
+        "thunder": "雷雨",
+        "possible": "可能",
+        "drizzle": "毛毛雨",
+        "overcast": "陰天",
+        "cloudy": "多雲",
+        "clear": "晴朗",
+        "sunny": "晴天",
+        "fog": "霧",
+        "mist": "霧",
+        "blizzard": "暴風雪",
+        "blowing": "吹",
+        "pellets": "冰粒",
+        "rainy": "雨",
+        "outbreaks": "陣雨"
+      };
+
+      let result = eng.toLowerCase().split(/[\s\-]+/).map(w => wordsMap[w] || w).join("");
+      // 轉首字大寫
+      result = result.charAt(0).toUpperCase() + result.slice(1);
+      return result;
+    }
+
+    function translateCond(eng) {
+      return condMap[eng] || fallbackTranslate(eng);
+    }
 
     function updateTime(localIso=null) {
       let d = localIso ? new Date(localIso) : new Date();
@@ -223,7 +255,7 @@
       const timeStr = `${month}/${date} ${hh}:${mm}`;
 
       const condEng = hourData.condition.text;
-      const condZh = condMap[condEng] || condEng;
+      const condZh = translateCond(condEng);
       const temp = Math.round(hourData.temp_c);
 
       return `<tr><td>${timeStr}</td><td>${condZh}</td><td>${temp}°C</td></tr>`;
@@ -238,7 +270,7 @@
 
         const temp = Math.round(data.current.temp_c);
         const condEng = data.current.condition.text;
-        const condZh = condMap[condEng] || condEng;
+        const condZh = translateCond(condEng);
         const loc = data.location.name + (data.location.region ? ', ' + data.location.region : '') + ' · ' + data.location.country;
 
         document.getElementById('cond').textContent = `${temp} ℃ · ${condZh}`;
@@ -271,15 +303,4 @@
         console.error(err);
         document.getElementById('cond').textContent = '-- ℃ · 無資料';
         document.getElementById('bigTemp').textContent = '-- ℃';
-        document.getElementById('location').textContent = '無法取得資料';
-        document.querySelector('#hourlyTable tbody').innerHTML = `<tr><td colspan="3">無法取得未來資料</td></tr>`;
-      }
-    }
-
-    updateTime();
-    fetchWeather();
-    setInterval(() => updateTime(), 1000);
-    setInterval(fetchWeather, WEATHER_REFRESH_MS);
-  </script>
-</body>
-</html>
+        document.getElementById('location').textContent = '無法
