@@ -1,124 +1,80 @@
-<!doctype html>
-<html lang="zh-Hant">
+<!DOCTYPE html>
+<html lang="zh-TW">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Weather.ru</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>台中天氣</title>
   <style>
-    html,body { height:100%; margin:0; font-family: "Segoe UI", Roboto, system-ui, -apple-system; }
-    body { overflow:hidden; background-size:cover; background-position:center; }
-    .overlay { position:fixed; inset:0; backdrop-filter: blur(2px); }
-
-    .banner {
-      position:fixed;
-      top:0; left:0; right:0;
-      height:64px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:0 20px;
-      box-sizing:border-box;
-      background: rgba(255,255,255,0.6);
-      backdrop-filter: blur(6px);
-      border-bottom-left-radius:12px;
-      border-bottom-right-radius:12px;
-      z-index:10;
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: #f0f8ff;
+      color: #333;
+      text-align: center;
+      padding: 20px;
     }
-    .left, .center, .right { display:flex; align-items:center; gap:10px; }
-    .left .brand { font-weight:700; font-size:20px; }
-    .center .time { font-size:18px; font-weight:600; }
-    .right .cond { font-size:16px; display:flex; align-items:center; gap:8px; }
-
-    .main {
-      position: absolute;
-      top: 120px;
-      width:100%;
-      text-align:center;
-      color:#fff;
-      text-shadow: 0 4px 18px rgba(0,0,0,0.6);
+    .weather-container {
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+      margin-top: 20px;
     }
-    .main .big-temp { font-size:96px; font-weight:800; line-height:0.9; }
-    .main .small { font-size:24px; margin-top:8px; opacity:0.95; }
-
-    .footer {
-      position:fixed;
-      bottom:20px;
-      width:100%;
-      text-align:center;
-      color:#fff;
-      z-index:9;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    .weather-container h2 {
+      margin: 0;
+      font-size: 24px;
+      color: #4CAF50;
     }
-
-    * { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+    .weather-container p {
+      font-size: 18px;
+      margin: 5px 0;
+    }
+    .weather-container .temp {
+      font-size: 48px;
+      font-weight: bold;
+      color: #FF6347;
+    }
+    .weather-container .description {
+      font-size: 20px;
+      color: #4682B4;
+    }
   </style>
 </head>
 <body>
-  <div class="overlay"></div>
-
-  <div class="banner" role="banner">
-    <div class="left">
-      <div class="brand">Weather.ru</div>
-    </div>
-    <div class="center">
-      <div class="time" id="time">--:-- --</div>
-    </div>
-    <div class="right">
-      <div class="cond" id="cond">-- ℃ · --</div>
-    </div>
+  <h1>歡迎來到台中天氣預報</h1>
+  <div class="weather-container" id="weather">
+    <h2>載入中...</h2>
   </div>
 
-  <main class="main">
-    <div class="big-temp" id="bigTemp">-- ℃</div>
-    <div class="small" id="location">Loading...</div>
-  </main>
-
-  <div class="footer" id="footer">資料來源：weatherapi.com</div>
-
   <script>
-    const CITY = 'Taipei';
-    const WEATHER_REFRESH_MS = 5 * 60 * 1000;
-
-    function updateTime(localIso=null) {
-      let d = localIso ? new Date(localIso) : new Date();
-      let h = d.getHours();
-      const m = d.getMinutes();
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      h = h % 12;
-      if (h === 0) h = 12;
-      const mm = m.toString().padStart(2,'0');
-      document.getElementById('time').textContent = `${h}:${mm} ${ampm}`;
-    }
+    const apiKey = '177eb0e0b74c4d6387812011250908';
+    const city = 'Taichung, TW';
+    const units = 'metric'; // 攝氏溫度
 
     async function fetchWeather() {
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=${units}&appid=${apiKey}`;
       try {
-        const res = await fetch(`/weather?city=${encodeURIComponent(CITY)}`);
-        if (!res.ok) throw new Error('取得天氣失敗');
-        const data = await res.json();
-        const temp = Math.round(data.current.temp_c);
-        const cond = data.current.condition.text;
-        const loc = data.location.name + (data.location.region ? ', ' + data.location.region : '') + ' · ' + data.location.country;
-        document.getElementById('cond').textContent = `${temp} ℃ · ${cond}`;
-        document.getElementById('bigTemp').textContent = `${temp} ℃`;
-        document.getElementById('location').textContent = loc;
-        if (data.location && data.location.localtime) {
-          const lt = data.location.localtime.replace(' ', 'T');
-          updateTime(lt);
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.cod === 200) {
+          const weather = data.weather[0];
+          const main = data.main;
+          document.getElementById('weather').innerHTML = `
+            <h2>${data.name} 天氣</h2>
+            <p class="temp">${main.temp}°C</p>
+            <p class="description">${weather.description}</p>
+            <p>濕度：${main.humidity}%</p>
+            <p>風速：${data.wind.speed} m/s</p>
+          `;
         } else {
-          updateTime();
+          document.getElementById('weather').innerHTML = '<p>無法取得天氣資料，請稍後再試。</p>';
         }
-      } catch (err) {
-        console.error(err);
-        document.getElementById('cond').textContent = '-- ℃ · 無資料';
-        document.getElementById('bigTemp').textContent = '-- ℃';
-        document.getElementById('location').textContent = '無法取得資料';
+      } catch (error) {
+        document.getElementById('weather').innerHTML = '<p>發生錯誤，請稍後再試。</p>';
       }
     }
 
-    updateTime();
     fetchWeather();
-    setInterval(() => updateTime(), 1000);
-    setInterval(fetchWeather, WEATHER_REFRESH_MS);
   </script>
 </body>
 </html>
