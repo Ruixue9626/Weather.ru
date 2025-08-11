@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Weather.ru</title>
+  <style>
+    html,body { height:100%; margin:0; font-family: "Segoe UI", Roboto, system-ui, -apple-system; }
+    body { overflow:hidden; background-size:cover; background-position:center; }
+    .overlay { position:fixed; inset:0; backdrop-filter: blur(2px); }
+
+    .banner {
+      position:fixed;
+      top:0; left:0; right:0;
+      height:64px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 20px;
+      box-sizing:border-box;
+      background: rgba(255,255,255,0.6);
+      backdrop-filter: blur(6px);
+      border-bottom-left-radius:12px;
+      border-bottom-right-radius:12px;
+      z-index:10;
+    }
+    .left, .center, .right { display:flex; align-items:center; gap:10px; }
+    .left .brand { font-weight:700; font-size:20px; }
+    .center .time { font-size:18px; font-weight:600; }
+    .right .cond { font-size:16px; display:flex; align-items:center; gap:8px; }
+
+    .main {
+      position: absolute;
+      top: 120px;
+      width:100%;
+      text-align:center;
+      color:#fff;
+      text-shadow: 0 4px 18px rgba(0,0,0,0.6);
+    }
+    .main .big-temp { font-size:96px; font-weight:800; line-height:0.9; }
+    .main .small { font-size:24px; margin-top:8px; opacity:0.95; }
+
+    .footer {
+      position:fixed;
+      bottom:20px;
+      width:100%;
+      text-align:center;
+      color:#fff;
+      z-index:9;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    }
+
+    * { -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; }
+  </style>
+</head>
+<body>
+  <div class="overlay"></div>
+
+  <div class="banner" role="banner">
+    <div class="left">
+      <div class="brand">Weather.ru</div>
+    </div>
+    <div class="center">
+      <div class="time" id="time">--:-- --</div>
+    </div>
+    <div class="right">
+      <div class="cond" id="cond">-- ℃ · --</div>
+    </div>
+  </div>
+
+  <main class="main">
+    <div class="big-temp" id="bigTemp">-- ℃</div>
+    <div class="small" id="location">Loading...</div>
+  </main>
+
+  <div class="footer" id="footer">資料來源：weatherapi.com</div>
+
+  <script>
+    const CITY = 'Taipei';
+    const WEATHER_REFRESH_MS = 5 * 60 * 1000;
+
+    function updateTime(localIso=null) {
+      let d = localIso ? new Date(localIso) : new Date();
+      let h = d.getHours();
+      const m = d.getMinutes();
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12;
+      if (h === 0) h = 12;
+      const mm = m.toString().padStart(2,'0');
+      document.getElementById('time').textContent = `${h}:${mm} ${ampm}`;
+    }
+
+    async function fetchWeather() {
+      try {
+        const res = await fetch(`/weather?city=${encodeURIComponent(CITY)}`);
+        if (!res.ok) throw new Error('取得天氣失敗');
+        const data = await res.json();
+        const temp = Math.round(data.current.temp_c);
+        const cond = data.current.condition.text;
+        const loc = data.location.name + (data.location.region ? ', ' + data.location.region : '') + ' · ' + data.location.country;
+        document.getElementById('cond').textContent = `${temp} ℃ · ${cond}`;
+        document.getElementById('bigTemp').textContent = `${temp} ℃`;
+        document.getElementById('location').textContent = loc;
+        if (data.location && data.location.localtime) {
+          const lt = data.location.localtime.replace(' ', 'T');
+          updateTime(lt);
+        } else {
+          updateTime();
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('cond').textContent = '-- ℃ · 無資料';
+        document.getElementById('bigTemp').textContent = '-- ℃';
+        document.getElementById('location').textContent = '無法取得資料';
+      }
+    }
+
+    updateTime();
+    fetchWeather();
+    setInterval(() => updateTime(), 1000);
+    setInterval(fetchWeather, WEATHER_REFRESH_MS);
+  </script>
+</body>
+</html>
