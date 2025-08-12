@@ -13,7 +13,10 @@
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
-    body { overflow-y:auto; padding-bottom:100px; }
+    body { 
+      overflow-y:auto; 
+      padding-bottom:200px; /* 增加底部空間，避免 footer 擋住內容 */
+    }
     .banner {
       position:fixed; top:0; left:0; right:0; height:64px;
       display:flex; align-items:center; justify-content:space-between;
@@ -107,16 +110,24 @@
       </thead>
       <tbody><tr><td colspan="3">載入中...</td></tr></tbody>
     </table>
+    <div id="dataSource" style="margin: 24px auto 0 auto; color: #555; font-size: 15px; text-align: center; max-width: 600px;">
+      資料來源：weatherapi.com
+      <br>
+      <br>
+      <br> 
+      <br> 
+    </div>
   </main>
 
   <div class="footer" id="footer">
-    <button class="btn-detail" onclick="window.open('https://www.msn.com/zh-tw/weather/forecast/in-%E5%8D%97%E5%8D%80,%E8%87%BA%E4%B8%AD%E5%B8%82?loc=eyJsIjoi5Y2X5Y2AIiwiciI6IuiHuuS4reW4giIsInIyIjoi6Ie65Lit5biCIiwiYyI6IuWPsOeBoyIsImkiOiJUVyIsInQiOjEwMiwiZyI6InpoLXR3IiwieCI6IjEyMC42NjQiLCJ5IjoiMjQuMTE3MSJ9&weadegreetype=C&cvid=ee279de14a52445cdaedb12e4e9d9035&ei=9', '_blank')">查看詳細天氣</button>
-    <div>資料來源：weatherapi.com</div>
+    <button class="btn-detail" id="multiActionBtn" type="button">
+      詳細天氣<span style="margin: 0 10px; color: #666;">｜</span>設定地區
+    </button>
   </div>
 
   <script>
+    let CITY = localStorage.getItem('weather_city') || 'Taichung';
     const API_KEY = '177eb0e0b74c4d6387812011250908';
-    const CITY = 'Taichung';
     const WEATHER_REFRESH_MS = 5 * 60 * 1000;
 
     // 中文天氣關鍵詞字典（包含常用詞）
@@ -251,6 +262,24 @@
         document.querySelector('#hourlyTable tbody').innerHTML = `<tr><td colspan="3">無法取得未來資料</td></tr>`;
       }
     }
+
+    document.getElementById('multiActionBtn').onclick = function(e) {
+      // 取得滑鼠點擊位置
+      const btn = e.target.closest('button');
+      const rect = btn.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      // 詳細天氣在左半，設定地區在右半
+      if (x < rect.width / 2) {
+        window.open('https://www.msn.com/zh-tw/weather/', '_blank');
+      } else {
+        const city = prompt('請輸入城市名稱（英文或中文皆可）', CITY);
+        if (city && city.trim()) {
+          CITY = city.trim();
+          localStorage.setItem('weather_city', CITY);
+          fetchWeather();
+        }
+      }
+    };
 
     updateTime();
     fetchWeather();
